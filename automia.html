@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutomIA — Automatisation IA pour PME</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --black: #020408;
+  --deep: #050c14;
+  --cyan: #00e5ff;
+  --blue: #0057ff;
+  --violet: #7c00ff;
+  --gold: #ffd700;
+  --white: #f0f4ff;
+  --glass: rgba(0,229,255,0.04);
+  --border: rgba(0,229,255,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CUSTOM CURSOR */
+#cursor {
+  position: fixed; width: 12px; height: 12px;
+  background: var(--cyan); border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  mix-blend-mode: screen;
+  transition: transform 0.1s ease;
+}
+#cursor-ring {
+  position: fixed; width: 40px; height: 40px;
+  border: 1px solid rgba(0,229,255,0.5); border-radius: 50%;
+  pointer-events: none; z-index: 9998;
+  transition: transform 0.3s ease, width 0.3s, height 0.3s;
+}
+
+/* CANVAS */
+#canvas3d {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 1.2rem 3rem;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(2,4,8,0.95), transparent);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,229,255,0.08);
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem; font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-logo-img {
+  max-height: 50px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
+}
+.nav-logo span { color: var(--gold); -webkit-text-fill-color: var(--gold); }
+
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 0.12em;
+  color: rgba(240,244,255,0.6); text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.3s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0;
+  width: 0; height: 1px; background: var(--cyan);
+  transition: width 0.3s;
+}
+.nav-links a:hover { color: var(--cyan); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-cta {
+  background: transparent;
+  border: 1px solid var(--cyan);
+  color: var(--cyan) !important;
+  padding: 0.5rem 1.4rem;
+  font-family: 'Space Mono', monospace !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.1em;
+  cursor: none;
+  transition: all 0.3s !important;
+}
+.nav-cta:hover { background: var(--cyan); color: var(--black) !important; }
+
+/* SECTIONS */
+section { position: relative; z-index: 10; }
+
+/* HERO */
+#hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; text-align: center;
+  padding: 8rem 2rem 4rem;
+}
+
+.hero-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--cyan); border: 1px solid rgba(0,229,255,0.3);
+  padding: 0.4rem 1.2rem; margin-bottom: 2.5rem;
+  display: inline-block;
+  animation: fadeInDown 0.8s ease both;
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-weight: 800; line-height: 0.9;
+  letter-spacing: -0.04em;
+  animation: fadeInUp 1s ease 0.2s both;
+  margin-bottom: 1rem;
+}
+.hero-title .line1 { display: block; color: var(--white); }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(90deg, var(--cyan) 0%, var(--blue) 50%, var(--violet) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem; font-weight: 300;
+  color: rgba(240,244,255,0.55);
+  max-width: 600px; line-height: 1.7;
+  margin: 1.5rem auto 3rem;
+  animation: fadeInUp 1s ease 0.4s both;
+}
+
+.hero-actions {
+  display: flex; gap: 1.2rem; flex-wrap: wrap; justify-content: center;
+  animation: fadeInUp 1s ease 0.6s both;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  color: var(--black); font-family: 'Syne', sans-serif;
+  font-size: 0.9rem; font-weight: 700;
+  padding: 1rem 2.4rem; border: none; cursor: none;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  transition: transform 0.2s, box-shadow 0.2s;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(0,229,255,0.4);
+}
+
+.btn-secondary {
+  background: transparent; border: 1px solid rgba(240,244,255,0.25);
+  color: var(--white); font-family: 'Syne', sans-serif;
+  font-size: 0.9rem; font-weight: 600;
+  padding: 1rem 2.4rem; cursor: none;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  transition: all 0.3s;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.hero-stats {
+  display: flex; gap: 4rem; margin-top: 5rem;
+  animation: fadeInUp 1s ease 0.8s both;
+}
+.stat { text-align: center; }
+.stat-num {
+  font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  display: block;
+}
+.stat-label {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(240,244,255,0.4);
+}
+
+.scroll-hint {
+  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  color: rgba(240,244,255,0.3);
+  font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em;
+  animation: bounce 2s infinite;
+}
+.scroll-hint::after {
+  content: ''; width: 1px; height: 40px;
+  background: linear-gradient(to bottom, rgba(0,229,255,0.5), transparent);
+}
+
+/* SERVICES */
+#services {
+  padding: 8rem 3rem;
+  max-width: 1300px; margin: 0 auto;
+}
+
+.section-header {
+  text-align: center; margin-bottom: 5rem;
+}
+.section-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--cyan); display: block; margin-bottom: 1rem;
+}
+.section-title {
+  font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1;
+}
+.section-title span {
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.services-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.1), rgba(124,0,255,0.1));
+  max-width: 1300px; margin: 0 auto;
+}
+
+.service-card {
+  background: var(--deep); padding: 3rem 2.5rem;
+  transition: all 0.4s;
+  position: relative; overflow: hidden;
+}
+.service-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  transform: scaleX(0); transition: transform 0.4s;
+}
+.service-card:hover { background: rgba(0,229,255,0.03); }
+.service-card:hover::before { transform: scaleX(1); }
+
+.service-tier {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 1rem;
+}
+.service-price {
+  font-family: 'Syne', sans-serif; font-size: 2.8rem; font-weight: 800;
+  color: var(--white); line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.service-price span { font-size: 1rem; color: rgba(240,244,255,0.4); }
+.service-name {
+  font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700;
+  margin-bottom: 1.5rem; color: var(--white);
+}
+.service-desc {
+  font-size: 0.88rem; color: rgba(240,244,255,0.55); line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.service-features { list-style: none; }
+.service-features li {
+  font-size: 0.82rem; color: rgba(240,244,255,0.6);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0,229,255,0.06);
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.service-features li::before {
+  content: '▸'; color: var(--cyan); font-size: 0.7rem;
+}
+
+.service-card.featured {
+  background: linear-gradient(160deg, rgba(0,229,255,0.06), rgba(124,0,255,0.06));
+  border: 1px solid rgba(0,229,255,0.2);
+}
+.service-card.featured .service-price {
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* ABOUT */
+#about {
+  padding: 8rem 3rem;
+  background: linear-gradient(to bottom, transparent, rgba(0,229,255,0.02), transparent);
+}
+.about-inner {
+  max-width: 1300px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
+}
+.about-text h2 {
+  font-family: 'Syne', sans-serif; font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem;
+}
+.about-text p {
+  color: rgba(240,244,255,0.6); line-height: 1.9; margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+}
+.about-metrics {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+}
+.metric {
+  background: var(--glass); border: 1px solid var(--border);
+  padding: 1.8rem; position: relative; overflow: hidden;
+}
+.metric::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+.metric-num {
+  font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  display: block;
+}
+.metric-label {
+  font-size: 0.8rem; color: rgba(240,244,255,0.5);
+  font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em;
+}
+
+/* PORTFOLIO */
+#portfolio {
+  padding: 8rem 3rem;
+  max-width: 1300px; margin: 0 auto;
+}
+
+.portfolio-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;
+  background: rgba(0,229,255,0.05); margin-top: 4rem;
+}
+
+.portfolio-item {
+  background: var(--deep); padding: 3rem;
+  transition: all 0.4s; position: relative; overflow: hidden;
+  cursor: none;
+}
+.portfolio-item::before {
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.04), transparent);
+  transition: left 0.6s;
+}
+.portfolio-item:hover::before { left: 100%; }
+.portfolio-item:hover { background: rgba(0,87,255,0.05); }
+
+.portfolio-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 1rem; display: block;
+}
+.portfolio-title {
+  font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700;
+  margin-bottom: 1rem;
+}
+.portfolio-desc {
+  font-size: 0.88rem; color: rgba(240,244,255,0.55); line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+.portfolio-stack {
+  display: flex; flex-wrap: wrap; gap: 0.6rem;
+}
+.tag {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border: 1px solid rgba(0,229,255,0.2); color: var(--cyan);
+  padding: 0.3rem 0.7rem;
+}
+
+/* FOUNDERS */
+#founders {
+  padding: 8rem 3rem;
+  background: linear-gradient(to bottom, transparent, rgba(124,0,255,0.03), transparent);
+}
+.founders-inner { max-width: 1300px; margin: 0 auto; }
+
+.founders-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 3rem; margin-top: 4rem;
+}
+
+.founder-card {
+  background: var(--deep); border: 1px solid var(--border);
+  padding: 3rem; position: relative; overflow: hidden;
+  transition: all 0.4s;
+}
+.founder-card:hover { border-color: rgba(0,229,255,0.4); transform: translateY(-4px); }
+
+.founder-card::before {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(0,229,255,0.08), transparent);
+}
+
+.founder-initial {
+  width: 70px; height: 70px;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+  color: var(--black); margin-bottom: 1.5rem;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.founder-name {
+  font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.founder-role {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--cyan);
+  margin-bottom: 1.5rem;
+}
+.founder-bio {
+  font-size: 0.88rem; color: rgba(240,244,255,0.6); line-height: 1.8;
+  margin-bottom: 2rem;
+}
+.skills-list {
+  display: flex; flex-wrap: wrap; gap: 0.6rem;
+}
+.skill-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: rgba(0,229,255,0.07); border: 1px solid rgba(0,229,255,0.15);
+  color: rgba(240,244,255,0.7); padding: 0.3rem 0.8rem;
+}
+
+/* FINANCIALS */
+#financials {
+  padding: 8rem 3rem;
+  max-width: 1300px; margin: 0 auto;
+}
+
+.financials-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px;
+  background: rgba(0,229,255,0.06); margin-top: 4rem;
+}
+.fin-card {
+  background: var(--deep); padding: 2.5rem;
+  text-align: center;
+}
+.fin-year {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(240,244,255,0.4); margin-bottom: 1.5rem; display: block;
+}
+.fin-revenue {
+  font-family: 'Syne', sans-serif; font-size: 2.4rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--gold), #ff9500);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  display: block; margin-bottom: 0.5rem;
+}
+.fin-clients {
+  font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 600;
+  color: var(--cyan); margin-bottom: 0.5rem;
+}
+.fin-margin {
+  font-size: 0.85rem; color: rgba(240,244,255,0.5);
+}
+
+.fin-chart {
+  margin-top: 4rem;
+  background: var(--deep); border: 1px solid var(--border); padding: 3rem;
+}
+.chart-title {
+  font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+  margin-bottom: 2.5rem; color: var(--white);
+}
+.chart-bars {
+  display: flex; align-items: flex-end; gap: 8px; height: 200px;
+}
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.bar {
+  width: 100%; background: linear-gradient(to top, var(--blue), var(--cyan));
+  min-height: 4px; transition: all 0.5s ease;
+  position: relative;
+}
+.bar::after {
+  content: attr(data-val);
+  position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+  font-family: 'Space Mono', monospace; font-size: 0.55rem;
+  color: var(--cyan); white-space: nowrap;
+}
+.bar-label {
+  font-family: 'Space Mono', monospace; font-size: 0.55rem;
+  color: rgba(240,244,255,0.35); letter-spacing: 0.05em;
+}
+
+/* CONTACT */
+#contact {
+  padding: 8rem 3rem;
+  text-align: center;
+  background: linear-gradient(to bottom, transparent, rgba(0,229,255,0.03));
+}
+.contact-inner { max-width: 700px; margin: 0 auto; }
+.contact-inner h2 {
+  font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+}
+.contact-inner p {
+  color: rgba(240,244,255,0.6); font-size: 1rem; line-height: 1.8; margin-bottom: 3rem;
+}
+.contact-links {
+  display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+}
+.contact-link {
+  font-family: 'Space Mono', monospace; font-size: 0.75rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--cyan); text-decoration: none;
+  border-bottom: 1px solid rgba(0,229,255,0.3);
+  padding-bottom: 0.3rem;
+  transition: border-color 0.3s;
+}
+.contact-link:hover { border-color: var(--cyan); }
+
+/* FOOTER */
+footer {
+  padding: 3rem; text-align: center;
+  border-top: 1px solid rgba(0,229,255,0.08);
+}
+footer p {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.1em; color: rgba(240,244,255,0.25);
+}
+footer span { color: var(--cyan); }
+
+/* SWOT */
+.swot-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5px;
+  background: rgba(0,229,255,0.05); margin-top: 4rem;
+}
+.swot-card { background: var(--deep); padding: 2.5rem; }
+.swot-label {
+  font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.swot-dot { width: 8px; height: 8px; border-radius: 50%; }
+.swot-card:nth-child(1) .swot-dot { background: #00ff88; }
+.swot-card:nth-child(2) .swot-dot { background: #ff6b35; }
+.swot-card:nth-child(3) .swot-dot { background: var(--cyan); }
+.swot-card:nth-child(4) .swot-dot { background: #ff4466; }
+.swot-items { list-style: none; }
+.swot-items li {
+  font-size: 0.85rem; color: rgba(240,244,255,0.6);
+  padding: 0.6rem 0; border-bottom: 1px solid rgba(0,229,255,0.06);
+  display: flex; gap: 0.8rem;
+}
+.swot-items li::before { content: '—'; color: rgba(0,229,255,0.4); }
+
+/* GLITCH */
+.glitch {
+  position: relative;
+}
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: transparent;
+  clip: rect(0, 0, 0, 0);
+}
+.glitch::before {
+  left: 2px; text-shadow: -2px 0 var(--cyan);
+  animation: glitch1 3s infinite linear;
+}
+.glitch::after {
+  left: -2px; text-shadow: 2px 0 var(--violet);
+  animation: glitch2 3s infinite linear;
+}
+
+/* FLOATING LINES */
+.grid-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+  background-size: 80px 80px;
+  pointer-events: none; z-index: 1;
+}
+
+/* ANIMATIONS */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+@keyframes glitch1 {
+  0%, 95%, 100% { clip: rect(0, 9999px, 0, 0); }
+  96% { clip: rect(20px, 9999px, 60px, 0); transform: translate(-2px); }
+  98% { clip: rect(80px, 9999px, 100px, 0); transform: translate(2px); }
+}
+@keyframes glitch2 {
+  0%, 93%, 100% { clip: rect(0, 9999px, 0, 0); }
+  94% { clip: rect(40px, 9999px, 90px, 0); transform: translate(2px); }
+  96% { clip: rect(10px, 9999px, 50px, 0); transform: translate(-2px); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(0,229,255,0.3); }
+  100% { box-shadow: 0 0 0 30px rgba(0,229,255,0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { display: none; }
+  .hero-stats { gap: 2rem; }
+  .services-grid, .founders-grid { grid-template-columns: 1fr; }
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .portfolio-grid { grid-template-columns: 1fr; }
+  .financials-grid { grid-template-columns: 1fr; }
+  .swot-grid { grid-template-columns: 1fr; }
+  #services, #portfolio, #founders, #financials, #contact, #about { padding: 5rem 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="canvas3d"></canvas>
+<div class="grid-overlay"></div>
+
+<!-- NAV -->
+<nav>
+  <img src="file:///C:/Users/admin/Downloads/Colorful_Brain_Digital_World_Technology_Logo-removebg-preview.png" alt="AutomIA Logo" class="nav-logo-img" style="height: 300px; object-fit: contain;">
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">À Propos</a></li>
+    <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#founders">Équipe</a></li>
+    <li><a href="#financials">Finance</a></li>
+    <li><a href="#contact" class="nav-cta">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <span class="hero-badge">✦ Agence IA — 2025</span>
+  <h1 class="hero-title glitch" data-text="AUTOMATISATION">
+    <span class="line1">AUTOM</span>
+    <span class="line2">IA</span>
+  </h1>
+  <p class="hero-subtitle">
+    Nous transformons les processus répétitifs des PME en leviers de croissance automatisés grâce à l'intelligence artificielle de dernière génération.
+  </p>
+  <div class="hero-actions">
+    <button class="btn-primary" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Découvrir nos offres</button>
+    <button class="btn-secondary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Audit gratuit →</button>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-num">93%</span><span class="stat-label">Marge nette</span></div>
+    <div class="stat"><span class="stat-num">72h</span><span class="stat-label">Time-to-value</span></div>
+    <div class="stat"><span class="stat-num">80+</span><span class="stat-label">Clients cibles</span></div>
+    <div class="stat"><span class="stat-num">23%</span><span class="stat-label">Croissance marché/an</span></div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-header reveal">
+    <span class="section-tag">// 01 — Offres</span>
+    <h2 class="section-title">Trois niveaux<br>d'<span>automatisation</span></h2>
+  </div>
+  <div class="services-grid reveal">
+    <div class="service-card">
+      <span class="service-tier">// Starter</span>
+      <div class="service-price">500<span>$/mois</span></div>
+      <div class="service-name">Découverte IA</div>
+      <p class="service-desc">Idéal pour les TPE/PME qui débutent leur transformation intelligente.</p>
+      <ul class="service-features">
+        <li>Audit processus (1 domaine)</li>
+        <li>1–2 automatisations simples</li>
+        <li>Intégration Gmail, Notion, Airtable</li>
+        <li>Tableau de bord ROI</li>
+        <li>Support email 48h</li>
+        <li>Déploiement en 3–5 jours</li>
+      </ul>
+    </div>
+    <div class="service-card featured">
+      <span class="service-tier">// Growth — Populaire</span>
+      <div class="service-price">1 500<span>$/mois</span></div>
+      <div class="service-name">Croissance Accélérée</div>
+      <p class="service-desc">Pour les PME souhaitant automatiser plusieurs départements simultanément.</p>
+      <ul class="service-features">
+        <li>Audit complet multi-domaines</li>
+        <li>5–8 automatisations avancées</li>
+        <li>Agent conversationnel 24/7</li>
+        <li>Intégration CRM complète</li>
+        <li>Dashboard temps réel</li>
+        <li>Support prioritaire 4h</li>
+      </ul>
+    </div>
+    <div class="service-card">
+      <span class="service-tier">// Enterprise</span>
+      <div class="service-price">3 000<span>$/mois</span></div>
+      <div class="service-name">Transformation Totale</div>
+      <p class="service-desc">Architecture IA sur mesure pour une transformation complète de l'entreprise.</p>
+      <ul class="service-features">
+        <li>Architecture IA personnalisée</li>
+        <li>Automatisations illimitées</li>
+        <li>LLM fine-tuné / RAG propriétaire</li>
+        <li>Intégrations ERP</li>
+        <li>SLA 99.5% — Astreinte 24/7</li>
+        <li>Chef de projet dédié</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- GITHUB SECTION -->
+<section id="portfolio" style="padding: 8rem 3rem; text-align: center; background: linear-gradient(to bottom, transparent, rgba(0,229,255,0.03));">
+  <div class="section-header reveal" style="max-width: 1300px; margin: 0 auto;">
+    <span class="section-tag">// 03 — Portfolio</span>
+    <h2 class="section-title" style="margin-bottom: 2rem;">Découvrez nos <span>projets</span></h2>
+    <p style="color: rgba(240,244,255,0.6); font-size: 1rem; line-height: 1.8; margin-bottom: 2rem;">Consultez tous nos travaux et contributions sur GitHub</p>
+    <a href="https://github.com/maryamri-cell" target="_blank" class="btn-primary" style="display: inline-block; text-decoration: none;">Visiter GitHub →</a>
+  </div>
+</section>
+
+<!-- FOUNDERS -->
+<section id="founders">
+  <div class="founders-inner">
+    <div class="section-header reveal">
+      <span class="section-tag">// 04 — Équipe</span>
+      <h2 class="section-title">Les <span>fondateurs</span></h2>
+    </div>
+    <div class="founders-grid reveal">
+      <div class="founder-card">
+        <div class="founder-initial">MA</div>
+        <h3 class="founder-name">Amri Maryam</h3>
+        <div class="founder-role">Co-fondatrice — IA & Data Science</div>
+        <p class="founder-bio">Étudiante en ingénierie spécialisée en Intelligence Artificielle et Data Science à l'ENSAM Meknès. Passionnée par les technologies émergentes, elle apporte une expertise rare en deep learning, computer vision et traitement du langage naturel.</p>
+        <div class="skills-list">
+          <span class="skill-tag">Python</span>
+          <span class="skill-tag">TensorFlow</span>
+          <span class="skill-tag">PyTorch</span>
+          <span class="skill-tag">NLP</span>
+          <span class="skill-tag">Computer Vision</span>
+          <span class="skill-tag">SQL</span>
+          <span class="skill-tag">Power BI</span>
+          <span class="skill-tag">Streamlit</span>
+        </div>
+      </div>
+      <div class="founder-card">
+        <div class="founder-initial">BH</div>
+        <h3 class="founder-name">Boughnam Houda</h3>
+        <div class="founder-role">Co-fondatrice — Stratégie & IA</div>
+        <p class="founder-bio">Co-fondatrice d'AutomIA, elle apporte une vision stratégique et business complémentaire à l'expertise technique. Sa maîtrise des outils d'automatisation no-code et sa vision commerciale orientent la croissance de l'agence.</p>
+        <div class="skills-list">
+          <span class="skill-tag">n8n</span>
+          <span class="skill-tag">Make</span>
+          <span class="skill-tag">LLM</span>
+          <span class="skill-tag">RAG</span>
+          <span class="skill-tag">B2B Sales</span>
+          <span class="skill-tag">Stratégie</span>
+          <span class="skill-tag">APIs</span>
+          <span class="skill-tag">Gestion Projet</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINANCIALS -->
+<section id="financials">
+  <div class="section-header reveal">
+    <span class="section-tag">// 05 — Projections</span>
+    <h2 class="section-title">Projections <span>financières</span></h2>
+  </div>
+  <div class="financials-grid reveal">
+    <div class="fin-card">
+      <span class="fin-year">// Année 1 — 2025</span>
+      <span class="fin-revenue">$188K</span>
+      <div class="fin-clients">25 clients actifs</div>
+      <div class="fin-margin">Marge nette 93%</div>
+    </div>
+    <div class="fin-card" style="background:linear-gradient(160deg,rgba(0,229,255,0.05),rgba(0,87,255,0.05))">
+      <span class="fin-year">// Année 2 — 2026</span>
+      <span class="fin-revenue">$420K</span>
+      <div class="fin-clients">50 clients actifs</div>
+      <div class="fin-margin">Marge nette 94%</div>
+    </div>
+    <div class="fin-card">
+      <span class="fin-year">// Année 3 — 2027</span>
+      <span class="fin-revenue">$780K</span>
+      <div class="fin-clients">80 clients actifs</div>
+      <div class="fin-margin">Marge nette 93%</div>
+    </div>
+  </div>
+
+  <div class="fin-chart reveal" style="margin-top:2px">
+    <div class="chart-title">Evolution du CA Mensuel — Année 1</div>
+    <div class="chart-bars" id="chartBars"></div>
+  </div>
+
+
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-inner reveal">
+    <span class="section-tag">// 07 — Contact</span>
+    <h2>Prêt à <span style="background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent">automatiser</span> ?</h2>
+    <p>Obtenez votre audit gratuit en 48h. Notre équipe analyse vos processus et vous livre un rapport d'opportunités personnalisé — sans engagement.</p>
+    <div class="contact-links">
+      <a href="mailto:amrimaryam780@gmail.com" class="contact-link">amrimaryam780@gmail.com</a>
+      <a href="tel:+212693192322" class="contact-link">+212 693 192 322</a>
+      <a href="https://www.linkedin.com/in/maryam-amri-31987034b" target="_blank" class="contact-link">LinkedIn →</a>
+      <a href="http://www.automia.io" target="_blank" class="contact-link">automia.io →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 <span>AutomIA</span> — Fondé par Amri Maryam & Boughnam Houda — Confidentiel</p>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 6 + 'px';
+  cursor.style.top = my - 6 + 'px';
+});
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) *.12;
+  ring.style.left = rx - 20 + 'px';
+  ring.style.top = ry - 20 + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+document.querySelectorAll('a,button,.portfolio-item,.service-card,.founder-card').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'scale(2)';
+    ring.style.width = '60px'; ring.style.height = '60px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'scale(1)';
+    ring.style.width = '40px'; ring.style.height = '40px';
+  });
+});
+
+// THREE.JS BACKGROUND
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+// Particles
+const geo = new THREE.BufferGeometry();
+const N = 3000;
+const positions = new Float32Array(N * 3);
+const colors = new Float32Array(N * 3);
+for (let i = 0; i < N; i++) {
+  positions[i*3] = (Math.random() - 0.5) * 20;
+  positions[i*3+1] = (Math.random() - 0.5) * 20;
+  positions[i*3+2] = (Math.random() - 0.5) * 20;
+  const t = Math.random();
+  if (t < 0.5) { colors[i*3] = 0; colors[i*3+1] = 0.9; colors[i*3+2] = 1; }
+  else if (t < 0.8) { colors[i*3] = 0; colors[i*3+1] = 0.34; colors[i*3+2] = 1; }
+  else { colors[i*3] = 0.49; colors[i*3+1] = 0; colors[i*3+2] = 1; }
+}
+geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+const mat = new THREE.PointsMaterial({ size: 0.025, vertexColors: true, transparent: true, opacity: 0.7 });
+const particles = new THREE.Points(geo, mat);
+scene.add(particles);
+
+// Wireframe sphere
+const sGeo = new THREE.IcosahedronGeometry(2.5, 2);
+const sEdges = new THREE.EdgesGeometry(sGeo);
+const sMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.06 });
+const sphere = new THREE.LineSegments(sEdges, sMat);
+scene.add(sphere);
+
+// Inner octahedron
+const oGeo = new THREE.OctahedronGeometry(1, 0);
+const oEdges = new THREE.EdgesGeometry(oGeo);
+const oMat = new THREE.LineBasicMaterial({ color: 0x7c00ff, transparent: true, opacity: 0.12 });
+const octa = new THREE.LineSegments(oEdges, oMat);
+scene.add(octa);
+
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  const t = Date.now() * 0.0005;
+  particles.rotation.y = t * 0.08 + mouseX * 0.2;
+  particles.rotation.x = mouseY * 0.1;
+  sphere.rotation.y = t * 0.15;
+  sphere.rotation.x = t * 0.07;
+  octa.rotation.y = -t * 0.3;
+  octa.rotation.z = t * 0.2;
+  renderer.render(scene, camera);
+}
+animate3D();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// SCROLL REVEAL
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      e.target.style.transitionDelay = i * 0.08 + 's';
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(r => observer.observe(r));
+
+// CHART
+const chartData = [1500,2500,4500,7000,9500,13000,17000,21000,24000,27000,30000,32000];
+const labels = ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
+const maxVal = Math.max(...chartData);
+const barsContainer = document.getElementById('chartBars');
+chartData.forEach((v, i) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'bar-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  bar.setAttribute('data-val', '$' + (v/1000).toFixed(0) + 'K');
+  bar.style.height = '0px';
+  const lbl = document.createElement('div');
+  lbl.className = 'bar-label';
+  lbl.textContent = labels[i];
+  wrap.appendChild(bar);
+  wrap.appendChild(lbl);
+  barsContainer.appendChild(wrap);
+  setTimeout(() => {
+    bar.style.height = Math.round((v / maxVal) * 180) + 'px';
+  }, 500 + i * 80);
+});
+</script>
+</body>
+</html>
